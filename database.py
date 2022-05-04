@@ -83,7 +83,7 @@ class Database:
 
     def getBooklistId(self, booklist_name, user_id):
         self.cur.execute(
-            "SELECT readify_booklist_id FROM booklist WHERE user_id = %s AND booklist_name = %s", (user_id, booklist_name))
+            "SELECT booklist_id FROM readify_booklist WHERE user_id = %s AND booklist_name = %s", (user_id, booklist_name))
         result = self.cur.fetchall()
         return result
 
