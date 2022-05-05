@@ -129,11 +129,11 @@ class Database:
         return result
 
     def bookPageRecommendations(self, book_id):
-        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b JOIN readify_genre g ON (b.book_id = g.book_id) WHERE b.book_author like CONCAT ('%%' , (SELECT book_author FROM readify_book WHERE book_id = %s), '%%' ) group by b.book_id, b.book_title, b.book_rating, b.book_image", (book_id))
+        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b JOIN readify_genre g ON (b.book_id = g.book_id) WHERE b.book_id != %s and b.book_author like CONCAT ('%%' , (SELECT book_author FROM readify_book WHERE book_id = %s), '%%' ) group by b.book_id, b.book_title, b.book_rating, b.book_image", (book_id, book_id))
 
         authordata = self.cur.fetchall()
 
-        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b, readify_genre g WHERE g.book_genre IN (SELECT book_genre FROM readify_genre WHERE book_id = %s) AND (b.book_id = g.book_id) group by b.book_id,b.book_title, b.book_rating, b.book_image order by b.book_rating desc LIMIT 28", (book_id))
+        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b, readify_genre g WHERE b.book_id!= %s and g.book_genre IN (SELECT book_genre FROM readify_genre WHERE book_id = %s) AND (b.book_id = g.book_id) group by b.book_id,b.book_title, b.book_rating, b.book_image order by b.book_rating desc LIMIT 28", (book_id, book_id))
 
         genredata = self.cur.fetchall()
 
