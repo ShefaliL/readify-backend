@@ -1,15 +1,20 @@
 
 import pymysql
+import random
+import yaml
 
+db = yaml.safe_load(open('db.yaml'))
+host = db["host"]
+user = db["user"]
+password = db["password"]
+db = db["db"]
 
 class Database:
 
+
     def __init__(self):
 
-        host = "us-cdbr-east-04.cleardb.com"
-        user = "b57d4729a12867"
-        password = "388430bc"
-        db = 'heroku_eebc78f02376aa6'
+        
 
         # host = "127.0.0.1"
         # user = "root"
@@ -117,6 +122,28 @@ class Database:
         result = self.cur.execute(
             "SELECT user_id, first_name, last_name, password FROM readify_user where email_id = %s", (email_id))
         return result
+
+    def updateProfile(self, user_id, first_name, last_name, email_id, genre_1, genre_2, genre_3):
+        result = self.cur.execute("UPDATE readify_user SET first_name = %s, last_name = %s, email_id = %s, genre_1 = %s, genre_2 = %s, genre_3 = %s WHERE user_id = %s", (
+            first_name, last_name, email_id, genre_1, genre_2, genre_3, user_id))
+        return result
+
+    def bookPageRecommendations(self, book_id):
+        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b JOIN readify_genre g ON (b.book_id = g.book_id) WHERE b.book_author like CONCAT ('%%' , (SELECT book_author FROM readify_book WHERE book_id = %s), '%%' ) group by b.book_id, b.book_title, b.book_rating, b.book_image", (book_id))
+
+        authordata = self.cur.fetchall()
+
+        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b, readify_genre g WHERE g.book_genre IN (SELECT book_genre FROM readify_genre WHERE book_id = %s) AND (b.book_id = g.book_id) group by b.book_id,b.book_title, b.book_rating, b.book_image order by b.book_rating desc LIMIT 28", (book_id))
+
+        genredata = self.cur.fetchall()
+
+        if len(authordata) >= 8:
+            author = random.sample(authordata, 8)
+        else:
+            author = authordata
+        genre = random.sample(genredata, 18 - len(author))
+        res = author + genre
+        return res
 
     def getBookGenreCount(self):
         result = self.cur.execute(

@@ -108,6 +108,33 @@ def getProfile():
         }), 401
 
 
+
+@app.route('/updateprofile', methods=['PUT'])
+def updateProfile():
+    mysql = database.Database()
+    payload = request.get_json()
+    user_id = payload['userId']
+    first_name = payload['firstName']
+    last_name = payload['lastName']
+    email_id = payload['emailId']
+    genre_1 = payload['genre1']
+    genre_2 = payload['genre2']
+    genre_3 = payload['genre3']
+    print(payload)
+    token = request.headers['Authorization'].split(" ")[1]
+    if maketoken.decode_token(app, user_id, token):
+        print("before update")
+        result = mysql.updateProfile(
+            user_id, first_name, last_name, email_id, genre_1, genre_2, genre_3)
+        mysql.con.commit()
+        mysql.closeCursor()
+        if result > 0:
+            return jsonify({"message": "success"}), 200
+    return jsonify({
+        'message': 'Token is invalid !!'
+    }), 401
+
+
 @app.route('/books', methods=['GET'])
 def getBooks():
     mysql = database.Database()
@@ -133,6 +160,16 @@ def getBookData():
     else:
         return jsonify({"message": "failure"}), 401
 
+@app.route('/bookdatarecommendations', methods=['GET'])
+def getBookDataRecommentation():
+    mysql = database.Database()
+    book_id = request.args.get('id')
+    result = mysql.bookPageRecommendations(book_id)
+    if len(result) > 0:
+        mysql.closeCursor()
+        return jsonify({"book_recommendations": result}), 200
+    else:
+        return jsonify({"message": "failure"}), 401
 
 @app.route('/mybooklist', methods=['GET'])
 def getBooklist():
