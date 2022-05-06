@@ -138,9 +138,9 @@ class Database:
         genredata = self.cur.fetchall()
 
         if len(authordata) >= 8:
-            author = random.sample(authordata, 8)
+            author = list(random.sample(authordata, 8))
         else:
-            author = authordata
+            author = list(authordata)
         genre = random.sample(genredata, 18 - len(author))
         res = author + genre
         return res
