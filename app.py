@@ -6,7 +6,7 @@ import maketoken
 import yaml
 
 app = Flask(__name__)
-# CORS(app)
+CORS(app)
 
 db = yaml.safe_load(open('db.yaml'))
 app.config['SECRET_KEY'] = db['secret_key']
