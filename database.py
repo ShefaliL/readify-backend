@@ -19,14 +19,14 @@ class Database:
         # host = "127.0.0.1"
         # user = "root"
         # password = "rootroot"
-        # db = 'readify'
+        # db = 'readify2'
         self.con = pymysql.connect(
             host=host, user=user, password=password, db=db, cursorclass=pymysql.cursors.DictCursor)
         self.cur = self.con.cursor()
 
     def getBooks(self):
         result = self.cur.execute(
-            "SELECT book_id, book_author, book_genre, book_image, book_like_percent, book_rating, book_score, book_title, book_votes FROM readify_book limit 20000")
+            "SELECT book_id, book_author, book_genre, book_image, book_like_percent, book_rating, book_score, book_title, book_votes FROM readify_book limit 15000")
         return result
 
     def getBookData(self, book_id):

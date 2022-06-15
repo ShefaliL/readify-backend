@@ -1,5 +1,5 @@
-secret_key: "app-secret-key"
-host : ""
-user : ""
-password : ""
-db : ''
+secret_key: "sdhgcvdscvdscscjsbcdbh"
+host: "us-cdbr-east-04.cleardb.com"
+user: "b57d4729a12867"
+password: "388430bc"
+db: "heroku_eebc78f02376aa6"
