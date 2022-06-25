@@ -140,7 +140,7 @@ def getBooks():
     mysql = database.Database()
     result = mysql.getBooks()
     if result > 0:
-        allBooks = mysql.cur.fetchall()
+        allBooks = mysql.cur.fetchall()   
         mysql.closeCursor()
         return jsonify({"books": allBooks}), 200
     else:
