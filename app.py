@@ -1,3 +1,4 @@
+from crypt import methods
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS, cross_origin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -135,18 +136,31 @@ def updateProfile():
     }), 401
 
 
-@app.route('/books', methods=['GET'])
+@app.route('/books', methods = ['GET'])
 def getBooks():
     mysql = database.Database()
-    result = mysql.getBooks()
-    if result > 0:
-        allBooks = mysql.cur.fetchall()   
-        mysql.closeCursor()
-        return jsonify({"books": allBooks}), 200
-    else:
-        mysql.closeCursor()
-        return jsonify({"message": "failure"}), 401
+    keyword = request.args.get('keyword')
+    rating = int(request.args.get('rating'))
+    min_lp = int(request.args.get('min'))
+    max_lp = int(request.args.get('max'))
+    order = request.args.get('order')
+    page = int(request.args.get('page'))
+    get_new_count = request.args.get('getnewcount')
+    # print(get_new_count)
+    
+    # print("keyword:", keyword, "\trating:", rating, "\tmin:",min_lp, "\tmax:", max_lp, "\torder: ",order, "\tpage:",page)
+         
+    total_count, book_list = mysql.getBooksWithCount(keyword, rating, min_lp, max_lp, order, page, get_new_count) 
 
+    if get_new_count == "true" :
+        return jsonify({
+            'total_count' : total_count,
+            'books': book_list
+        }), 200
+    else:
+        return jsonify({
+            'books': book_list
+        }), 200
 
 @app.route('/bookdata', methods=['GET'])
 def getBookData():

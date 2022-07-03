@@ -1,6 +1,8 @@
 
+
 import pymysql
 import random
+
 import yaml
 
 db = yaml.safe_load(open('db.yaml'))
@@ -10,6 +12,7 @@ password = db["password"]
 db = db["db"]
 
 class Database:
+
 
 
     def __init__(self):
@@ -26,8 +29,103 @@ class Database:
 
     def getBooks(self):
         result = self.cur.execute(
-            "SELECT book_id, book_author, book_genre, book_image, book_like_percent, book_rating, book_score, book_title, book_votes FROM readify_book")
+            "SELECT book_id, book_author, book_genre, book_image, book_like_percent, book_rating, book_score, book_title, book_votes FROM readify_book limit 20000")
         return result
+    
+    def getBooksWithCount(self, keyword, rating, min_lp, max_lp, order, page, get_new_count):
+        result = ""
+        query1 = "SELECT book_id, book_author, book_genre, book_image, book_like_percent, book_rating, book_score, book_title, book_votes FROM readify_book"
+        query2 = " SELECT count(*) as page_count from readify_book "
+        final_count = 0
+
+        filter_query, param_list = self.getFilterQuery(keyword, rating, min_lp, max_lp, order, page)
+
+        if get_new_count == "true":
+            query2 += filter_query   #--------------update filter_query2 to get total count of records----------------
+            # print("total count query executed")
+            result = self.cur.execute(query2, param_list)
+            if result > 0:
+                total_count = self.cur.fetchone()
+                # print("total count: ", total_count['page_count'])
+                final_count = total_count['page_count']
+        
+        
+          
+
+        #----------------check for order----------------
+        if order != "default" and order == "ascending":
+            filter_query += " ORDER BY book_rating"
+        elif order != "default" and order == "descending":
+            filter_query += " ORDER BY book_rating DESC "
+
+        
+
+
+        filter_query += " LIMIT 30 OFFSET %s"
+        offset = int((page-1)*30)
+        param_list.append(offset)
+        query1 += filter_query
+        
+        # print("page offset query executed")
+        result = self.cur.execute(query1, param_list)
+        book_list = []
+        if result > 0 :
+            book_list = self.cur.fetchall()
+        # else:
+        #     print(result)
+        
+        
+        return final_count, book_list
+
+
+    def getFilterQuery(self, keyword, rating, min_lp, max_lp, order, page):
+        filter_query = ""
+        param_list = []
+        count = 0
+
+        #----------------check for keyword----------------
+        if keyword != "":
+            filter_query += " WHERE (book_title like %s or book_author like %s or book_genre like %s) "
+            param_list.append("%"+keyword+"%")
+            param_list.append("%"+keyword+"%")
+            param_list.append("%"+keyword+"%")
+            count += 1
+        
+        #----------------check for rating----------------
+        if rating > 0 and count == 0:
+            filter_query += " WHERE book_rating >= %s"
+            param_list.append(rating)
+            count += 1
+        elif rating > 0 and count > 0:
+            filter_query += " and book_rating >= %s "
+            param_list.append(rating)
+            count += 1
+
+        #----------------check for likepercent----------------
+        if min_lp > 0 and max_lp < 100:
+            if count > 0 :
+                filter_query += " and (book_like_percent BETWEEEN %s and %s )"
+            else: 
+                filter_query += " WHERE (book_like_percent BETWEEEN %s and %s ) "
+            param_list.append(min_lp)
+            param_list.append(max_lp)
+            count += 1
+        elif min_lp == 0 and max_lp < 100:
+            if count > 0 :
+                filter_query += " and (book_like_percent <= %s)"
+            else: 
+                filter_query += " WHERE (book_like_percent <= %s) "
+            param_list.append(max_lp)
+            count += 1
+        elif min_lp > 0 and max_lp == 100: 
+            if count > 0 :
+                filter_query += " and (book_like_percent >= %s)"
+            else: 
+                filter_query += " WHERE (book_like_percent >= %s) "
+            param_list.append(min_lp)
+            count += 1
+
+        return filter_query, param_list
 
     def getBookData(self, book_id):
         result = self.cur.execute(
@@ -102,8 +200,11 @@ class Database:
         return 2
 
     def updateBooklistName(self, user_id, booklist_id, booklist_name):
+        parameter = [booklist_name, user_id, booklist_id]
+        para = tuple(parameter)
+        print(para)
         result = self.cur.execute(
-            "UPDATE readify_booklist SET booklist_name = %s WHERE user_id = %s AND booklist_id = %s", (booklist_name, user_id, booklist_id))
+            "UPDATE readify_booklist SET booklist_name = %s WHERE user_id = %s AND booklist_id = %s", para)
         return result
 
     def createUsers(self, first_name, last_name, email_id, password, genre_1, genre_2, genre_3):
@@ -133,7 +234,7 @@ class Database:
 
         authordata = self.cur.fetchall()
 
-        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b, readify_genre g WHERE b.book_id!= %s and g.book_genre IN (SELECT book_genre FROM readify_genre WHERE book_id = %s) AND (b.book_id = g.book_id) group by b.book_id,b.book_title, b.book_rating, b.book_image order by b.book_rating desc LIMIT 28", (book_id, book_id))
+        self.cur.execute("SELECT b.book_id, b.book_title, b.book_rating, b.book_image FROM readify_book b, readify_genre g WHERE b.book_id!= %s and g.book_genre IN (SELECT book_genre FROM readify_genre WHERE book_id = %s) AND (b.book_id = g.book_id) group by b.book_id,b.book_title, b.book_rating, b.book_image  LIMIT 28", (book_id, book_id))
 
         genredata = self.cur.fetchall()
 
