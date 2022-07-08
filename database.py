@@ -2,14 +2,15 @@
 
 import pymysql
 import random
+import recommendation
 
 import yaml
 
-db = yaml.safe_load(open('db.yaml'))
-host = db["host"]
-user = db["user"]
-password = db["password"]
-db = db["db"]
+# db = yaml.safe_load(open('db.yaml'))
+# host = db["host"]
+# user = db["user"]
+# password = db["password"]
+# db = db["db"]
 
 class Database:
 
@@ -19,10 +20,10 @@ class Database:
 
         
 
-        # host = "127.0.0.1"
-        # user = "root"
-        # password = "rootroot"
-        # db = 'readify2'
+        host = "127.0.0.1"
+        user = "root"
+        password = "rootroot"
+        db = 'readify2'
         self.con = pymysql.connect(
             host=host, user=user, password=password, db=db, cursorclass=pymysql.cursors.DictCursor)
         self.cur = self.con.cursor()
@@ -34,11 +35,11 @@ class Database:
     
     def getBooksWithCount(self, keyword, rating, min_lp, max_lp, order, page, get_new_count):
         result = ""
-        query1 = "SELECT book_id, book_author, book_genre, book_image, book_like_percent, book_rating, book_score, book_title, book_votes FROM readify_book"
+        query1 = "SELECT book_id, book_image, book_rating, book_title FROM readify_book"
         query2 = " SELECT count(*) as page_count from readify_book "
         final_count = 0
 
-        filter_query, param_list = self.getFilterQuery(keyword, rating, min_lp, max_lp, order, page)
+        filter_query, param_list = self.getFilterQuery(keyword, rating, min_lp, max_lp)
 
         if get_new_count == "true":
             query2 += filter_query   #--------------update filter_query2 to get total count of records----------------
@@ -78,7 +79,7 @@ class Database:
         return final_count, book_list
 
 
-    def getFilterQuery(self, keyword, rating, min_lp, max_lp, order, page):
+    def getFilterQuery(self, keyword, rating, min_lp, max_lp):
         filter_query = ""
         param_list = []
         count = 0
@@ -138,6 +139,7 @@ class Database:
         return result
 
     def getBooklistWithData(self, user_id):
+        # self.getRecommendationList(user_id)
         result = self.cur.execute(
             "SELECT booklist_id, booklist_name FROM readify_booklist where user_id = %s", (user_id))
         if result == 0:
@@ -157,6 +159,58 @@ class Database:
                 booklists[idx] = booklist
 
         return booklists
+
+    def getRecommendationList(self,user_id):
+        result = self.cur.execute("SELECT booklist_id FROM readify_booklist where user_id = %s", (user_id))
+        if result == 0:
+            # cold start
+            print("no booklist") 
+        else:
+            allbooksinbooklist = []
+            booklists = self.cur.fetchall()
+            # print(booklists)
+            for booklist in booklists:
+                self.cur.execute("SELECT book_id FROM readify_booklist_data bl WHERE booklist_id = %s ", (booklist["booklist_id"]))
+                ans = self.cur.fetchall()
+                if len(ans) >0:
+                    allbooksinbooklist+= ans
+            # print("book_id for rec",allbooksinbooklist)
+
+            if len(allbooksinbooklist) > 0:
+                rec_book_id_list = recommendation.get_recommendations_list(allbooksinbooklist)
+                # print(rec_book_id_list)
+                # print(len(rec_book_id_list))
+                
+                format_string_placeholders = ','.join(['%s']*len(rec_book_id_list))
+                
+                self.cur.execute("SELECT book_id, book_image, book_rating, book_title FROM readify_book where book_id in (%s)"%format_string_placeholders,rec_book_id_list )
+                final_rec_list = self.cur.fetchall()
+                return final_rec_list, len(final_rec_list)
+                
+            else:
+                print("cold start")
+    
+    def getBookPageRecommendations(self, book_id):
+       
+        rec_book_id_list = recommendation.get_recomm_for_book(book_id)
+      
+        format_string_placeholders = ','.join(['%s']*len(rec_book_id_list))
+
+        self.cur.execute("SELECT book_id, book_image, book_rating, book_title, book_author FROM readify_book where book_id in (%s)"%format_string_placeholders,rec_book_id_list )
+        final_rec_list = self.cur.fetchall()
+
+        # for book in final_rec_list:
+        #     print(book,"\n")
+
+        return final_rec_list
+
+    def fetchGenres(self):
+        result = self.cur.execute("SELECT DISTINCT book_genre FROM readify_genre ")
+        genre_list = self.cur.fetchall();
+        final_genres = [ x['book_genre'] for x in genre_list]
+        return final_genres
+
+        
 
     def createBooklist(self, user_id, booklist_name):
         result = self.cur.execute(
