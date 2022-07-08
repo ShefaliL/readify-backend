@@ -6,11 +6,11 @@ import recommendation
 
 import yaml
 
-# db = yaml.safe_load(open('db.yaml'))
-# host = db["host"]
-# user = db["user"]
-# password = db["password"]
-# db = db["db"]
+db = yaml.safe_load(open('db.yaml'))
+host = db["host"]
+user = db["user"]
+password = db["password"]
+db = db["db"]
 
 class Database:
 
@@ -20,10 +20,10 @@ class Database:
 
         
 
-        host = "127.0.0.1"
-        user = "root"
-        password = "rootroot"
-        db = 'readify2'
+        # host = "127.0.0.1"
+        # user = "root"
+        # password = "rootroot"
+        # db = 'readify2'
         self.con = pymysql.connect(
             host=host, user=user, password=password, db=db, cursorclass=pymysql.cursors.DictCursor)
         self.cur = self.con.cursor()
