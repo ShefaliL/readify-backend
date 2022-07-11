@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import DistanceMetric
 
 
 
@@ -66,7 +67,43 @@ def get_count_matrix():
 
     return books_df, cm_author,cm_title_genre
 
-# def get_recom_cold_start(initial_genres):
+def get_recom_cold_start(input_genres):
+
+    # read vectorizer
+    obj = pd.read_pickle('vec_cold_start.pkl')
+    vec_cold_start = obj['count_matrix']
+
+    # read count matrix
+    obj = pd.read_pickle('cm_cold_start.pkl')
+    cm_cold_start = obj['count_matrix'].toarray()
+
+    #book pickle --> book-dataframe
+    books_pickle = pd.read_pickle('books_df2.pkl')
+    books_df = books_pickle['books_df2']
+
+    # fit input count matrix
+    cm_input = vec_cold_start.transform(input_genres).toarray()
+    
+    # calculate Braycurtis distance
+    dist = DistanceMetric.get_metric('braycurtis')
+    dist_cold_start = dist.pairwise(cm_cold_start, cm_input)
+    dist_cold_start = list(enumerate(dist_cold_start))
+
+    # sort distance in ascending --> less distance, more similarity
+    sorted_md = sorted(dist_cold_start, key=lambda x:x[1])
+
+    # generate recommendations
+    j = 0
+    cold_star_recomm_list = []
+    for book_with_score in sorted_md:
+        temp_recomm = books_df[books_df.book_id == book_with_score[0]+1][['book_id','book_title','book_rating','book_numratings']].values[0]
+        if temp_recomm[2]>=3.0 and temp_recomm[3]>=100:
+            cold_star_recomm_list.append(temp_recomm[0])
+            j+=1
+        if j>=100:
+            break
+
+    return cold_star_recomm_list
 
 
 def get_author_recomm(book, cm_author, books_df):
@@ -131,3 +168,7 @@ def get_title_genre_recomm(book, cm_title_genre, books_df):
 # input_list = [{'book_id': 2}, {'book_id': 1}]
 # recom = get_recommendations(input_list)
 # print(recom)
+
+# input_genres = ["Young_Adult Action Adventure"]
+# recom = get_recom_cold_start(input_genres)
+# print("cold start recomm\n",recom)

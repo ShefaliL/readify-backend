@@ -164,7 +164,8 @@ class Database:
         result = self.cur.execute("SELECT booklist_id FROM readify_booklist where user_id = %s", (user_id))
         if result == 0:
             # cold start
-            print("no booklist") 
+            # print("no booklist") 
+            return self.getColdStartRecommendations(user_id)
         else:
             allbooksinbooklist = []
             booklists = self.cur.fetchall()
@@ -188,8 +189,30 @@ class Database:
                 return final_rec_list, len(final_rec_list)
                 
             else:
-                print("cold start")
+                # print("cold start")
+                return self.getColdStartRecommendations(user_id)
+            
     
+
+    def getColdStartRecommendations(self, user_id):
+        result = self.cur.execute("SELECT genre_1, genre_2, genre_3 from readify_user where user_id = %s", (user_id))
+        genre_preference = self.cur.fetchall()
+        input_genres = []
+        for key in genre_preference[0].keys():
+            input_genres.append(genre_preference[0][key].replace(" ","_"))
+        input_genres = " ".join(input_genres)
+        
+        rec_book_id_list = recommendation.get_recom_cold_start([input_genres])
+        # print(sorted(rec_book_id_list))
+        format_string_placeholders = ','.join(['%s']*len(rec_book_id_list))
+        self.cur.execute("SELECT book_id, book_image, book_rating, book_title FROM readify_book where book_id in (%s)"%format_string_placeholders,rec_book_id_list )
+        final_rec_list = self.cur.fetchall()
+        
+        return final_rec_list, len(final_rec_list)
+
+        
+
+
     def getBookPageRecommendations(self, book_id):
        
         rec_book_id_list = recommendation.get_recomm_for_book(book_id)
