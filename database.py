@@ -17,13 +17,6 @@ class Database:
 
 
     def __init__(self):
-
-        
-
-        # host = "127.0.0.1"
-        # user = "root"
-        # password = "rootroot"
-        # db = 'readify2'
         self.con = pymysql.connect(
             host=host, user=user, password=password, db=db, cursorclass=pymysql.cursors.DictCursor)
         self.cur = self.con.cursor()
@@ -302,6 +295,7 @@ class Database:
         return result
 
     def updateProfile(self, user_id, first_name, last_name, email_id, genre_1, genre_2, genre_3):
+        print("before execute query")
         result = self.cur.execute("UPDATE readify_user SET first_name = %s, last_name = %s, email_id = %s, genre_1 = %s, genre_2 = %s, genre_3 = %s WHERE user_id = %s", (
             first_name, last_name, email_id, genre_1, genre_2, genre_3, user_id))
         return result

@@ -139,6 +139,7 @@ def updateProfile():
             user_id, first_name, last_name, email_id, genre_1, genre_2, genre_3)
         mysql.con.commit()
         mysql.closeCursor()
+        print("result:", result)
         if result > 0:
             return jsonify({"message": "success"}), 200
     return jsonify({
