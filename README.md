@@ -10,9 +10,10 @@ Depending on the books saved in your booklists, our machine learning algorithm w
 
 Even before you create your booklists, we will generate initial recommendations for you depending on the top 3 genres you select while registering on our platform. This is done to handle cold-start.
 
-Tech Stack
-Prototyping - Figma
-Front-end - ReactJS, Material UI, CSS3
-Back-end - Python (Flask). Github repo for backend code
-Database - MySQL
-Deployment - Heroku
+Tech Stack  
+Prototyping - Figma  
+Front-end - ReactJS, Material UI, CSS3  
+Back-end - Python (Flask). Github repo for backend code  
+Database - MySQL  
+Deployment - Heroku  
+
